@@ -106,6 +106,58 @@ router.delete('/:id', (req, res) => {
         })
 })
 
+router.get('/:id/comments', (req, res) => {
+    const { id } = req.params;
+    db.findById(id)
+        .then(post => {
+            if(post.length > 0){
+                db.findPostComments(id)
+                    .then(comments => {
+                        console.log(comments)
+                        res.status(200).json(comments)
+                    })
+                    .catch(err => {
+                        console.log('error fetching comments', err);
+                        res.status(500).json({error: "Error getting comments"})
+                    })
+            } else {
+                res.status(404).json({error: "Post with specified ID does not exist."})
+            }
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({error: "Error getting comments"})
+        })
+})
+
+router.post('/:post_id/comments', (req, res) => {
+    const { post_id } = req.params;
+    const { text } = req.body;
+
+    if(!text){
+        return res.status(400).json({error: "Comment requires a string"})
+    }
+   
+    db.insertComment({ text, post_id })
+    .then(({id: comment_id}) => {
+        db.findCommentById(comment_id)
+            .then(([comment]) => {
+                if(comment){
+                    res.status(200).json(comment);
+                } else {
+                    res.status(404).json({error: "Comment with specified ID not found"})
+                }
+            })
+            .catch(err => {
+                console.log('post error', err)
+                res.status(500).json({error: "Error retrieving comment"});
+            }) 
+    })
+    .catch(err => {
+        res.status(500).json({error: "Error adding the comment to post"})
+    })
+})
+
 
 
 
